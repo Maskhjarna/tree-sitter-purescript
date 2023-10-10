@@ -219,8 +219,6 @@ module.exports = grammar({
     [$._pat_unboxed_sum, $._exp_unboxed_sum],
 
 
-    [$.exp_lambda_case],
-
     /**
      * General kind signatures cause `(a :: k)` to be ambiguous.
      * This problem might be solvable if `type.js` were to be refactored.

@@ -22,29 +22,6 @@ module.exports = {
     $._exp,
   ),
 
-  /**
-    * An expression like `[1,2..20]`.
-    *
-    * The two dots are handled in the scanner to disambiguate module and projection dots:
-    *
-    * - `[A.b]`
-    * - `[a.b]`
-    *
-    * The reason for `choice($._arith_dotdot, '..')` is simply to avoid having to add another case to the scanner.
-    * The disambiguation is only performed when the first dot occurs immediately after the identifier, since succeeding
-    * whitespace is not allowed for module/projection dots.
-    * When the scanner encounters two dots with no further symbolic characters, it rejects the token, deferring to the
-    * grammar.
-    * We could instead check for the `_arith_dotdot` symbol, but we have to reject the token anyway for record
-    * wildcards, so we can just fall back to the grammar for this as well.
-    */
-  exp_arithmetic_sequence: $ => brackets(
-    field('from', $._exp),
-    optional(seq($.comma, field('step', $._exp))),
-    choice($._arith_dotdot, '..'),
-    optional(field('to', $._exp)),
-  ),
-
   exp_section_left: $ => parens(
     $._exp_infix,
     $._qop,
@@ -81,11 +58,11 @@ module.exports = {
 
   exp_cond: $ => seq(
     'if',
-    field('if', $._exp),
+    field('if', choice($.wildcard, $._exp)),
     'then',
-    field('then', $._exp),
+    field('then', choice($.wildcard, $._exp)),
     'else',
-    field('else', $._exp),
+    field('else', choice($.wildcard, $._exp)),
   ),
 
   pattern_guard: $ => seq(
@@ -115,15 +92,11 @@ module.exports = {
 
   alts: $ => layouted($, $.alt),
 
-  exp_case: $ => seq('case', field('condition', $._exp), 'of', optional($.alts)),
-
-  /**
-   * left associative because the alts are optional
-   */
-  exp_lambda_case: $ => seq(
-    '\\',
+  exp_case: $ => seq(
     'case',
-    optional($.alts),
+    field('condition', choice($.wildcard, $._exp)),
+    'of',
+    $.alts
   ),
 
   stmt: $ => choice(
@@ -190,7 +163,6 @@ module.exports = {
     $.exp_th_quoted_name,
     $.record_literal,
     $.record_update,
-    $.exp_arithmetic_sequence,
     $.exp_section_left,
     $.exp_section_right,
     $.exp_unboxed_sum,
@@ -211,7 +183,6 @@ module.exports = {
   _aexp: $ => choice(
     $._aexp_projection,
     $.exp_type_application,
-    $.exp_lambda_case,
     $.exp_do,
     $.exp_projection,
   ),
