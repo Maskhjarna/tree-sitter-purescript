@@ -111,7 +111,7 @@
 
  (variable) @variable
 
- (exp_infix (variable) @operator)  ; consider infix functions as operators
+ (exp_infix_ticked (variable) @operator)  ; consider infix functions as operators
 
  ("@" @namespace)  ; "as" pattern operator, e.g. x@Constructor
 
