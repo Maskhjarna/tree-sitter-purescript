@@ -1,0 +1,239 @@
+================================================================================
+case-of wildcard
+================================================================================
+
+f = case _ of
+  true -> const true
+  false -> case _ of
+    true -> true
+    false -> false
+
+--------------------------------------------------------------------------------
+
+(purescript
+  (function
+    (variable)
+    (exp_case
+      (wildcard)
+      (alts
+        (alt
+          (pat_name
+            (variable))
+          (exp_apply
+            (exp_name
+              (variable))
+            (exp_name
+              (variable))))
+        (alt
+          (pat_name
+            (variable))
+          (exp_case
+            (wildcard)
+            (alts
+              (alt
+                (pat_name
+                  (variable))
+                (exp_name
+                  (variable)))
+              (alt
+                (pat_name
+                  (variable))
+                (exp_name
+                  (variable))))))))))
+
+================================================================================
+multi-argument case-of lambda
+================================================================================
+
+f = case _, _, _ of
+  _, unit, _ -> ok
+
+--------------------------------------------------------------------------------
+
+(purescript
+  (function
+    (variable)
+    (exp_case
+      (wildcard)
+      (comma)
+      (wildcard)
+      (comma)
+      (wildcard)
+      (alts
+        (alt
+          (pat_wildcard
+            (pat_wildcard))
+          (comma)
+          (pat_name
+            (variable))
+          (comma)
+          (pat_wildcard
+            (pat_wildcard))
+          (exp_name
+            (variable)))))))
+
+================================================================================
+if-then-else wildcards
+================================================================================
+
+f = if _ then 1 else 1
+
+f = if true then _ else 1
+
+f = if true then 1 else _
+
+f = if _ then _ else _
+
+f = (if _ then true else false) true
+
+f = true # if _ then true else false
+
+--------------------------------------------------------------------------------
+
+(purescript
+  (function
+    (variable)
+    (exp_cond
+      (wildcard)
+      (exp_literal
+        (integer))
+      (exp_literal
+        (integer))))
+  (function
+    (variable)
+    (exp_cond
+      (exp_name
+        (variable))
+      (wildcard)
+      (exp_literal
+        (integer))))
+  (function
+    (variable)
+    (exp_cond
+      (exp_name
+        (variable))
+      (exp_literal
+        (integer))
+      (wildcard)))
+  (function
+    (variable)
+    (exp_cond
+      (wildcard)
+      (wildcard)
+      (wildcard)))
+  (function
+    (variable)
+    (exp_apply
+      (exp_parens
+        (exp_cond
+          (wildcard)
+          (exp_name
+            (variable))
+          (exp_name
+            (variable))))
+      (exp_name
+        (variable))))
+  (function
+    (variable)
+    (exp_infix
+      (exp_name
+        (variable))
+      (operator)
+      (exp_cond
+        (wildcard)
+        (exp_name
+          (variable))
+        (exp_name
+          (variable))))))
+
+================================================================================
+operator sections and infix function sections
+================================================================================
+
+f = (_ + 1)
+f = (1 + _)
+
+f = (_ `add` 1)
+f = (1 `add` _)
+
+f = (_ `(do case arbitrary expression of {} -> ok)` 1)
+
+--------------------------------------------------------------------------------
+
+(purescript
+      (function
+        (variable)
+        (exp_section_right
+          (wildcard)
+          (operator)
+          (exp_literal
+            (integer))))
+      (function
+        (variable)
+        (exp_section_left
+          (exp_literal
+            (integer))
+          (operator)
+          (wildcard)))
+      (function
+        (variable)
+        (exp_section_right
+          (wildcard)
+          (variable)
+          (exp_literal
+            (integer))))
+      (function
+        (variable)
+        (exp_section_left
+          (exp_literal
+            (integer))
+          (variable)
+          (wildcard)))
+      (function
+        (variable)
+        (exp_section_right
+          (wildcard)
+          (exp_parens
+            (exp_do
+              (stmt
+                (exp_case
+                  (exp_apply
+                    (exp_name
+                      (variable))
+                    (exp_name
+                      (variable)))
+                  (alts
+                    (alt
+                      (pat_record
+                        (pat_fields))
+                      (exp_name
+                        (variable))))))))
+          (exp_literal
+            (integer)))))
+
+================================================================================
+operator sections don't break pattern matching
+================================================================================
+
+tail (_ : xs) = f Just xs
+
+--------------------------------------------------------------------------------
+
+(purescript
+  (function
+    (variable)
+    (patterns
+      (pat_parens
+        (pat_infix
+          (pat_wildcard
+            (pat_wildcard))
+          (constructor_operator)
+          (pat_name
+            (variable)))))
+    (exp_apply
+      (exp_name
+        (variable))
+      (exp_name
+        (constructor))
+      (exp_name
+        (variable)))))
