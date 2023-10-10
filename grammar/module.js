@@ -1,4 +1,4 @@
-const {parens} = require('./util.js')
+const { parens, where_optional } = require('./util.js')
 
 module.exports = {
   // ------------------------------------------------------------------------
@@ -32,6 +32,6 @@ module.exports = {
     'module',
     field('name', $.qualified_module),
     field('exports', optional($.exports)),
-    where($, $._topdecl),
+    where_optional($, $._topdecl),
   ),
 }

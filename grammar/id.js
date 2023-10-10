@@ -1,22 +1,16 @@
-const {parens, varid_pattern} = require('./util.js')
+const { parens, varid_pattern } = require('./util.js')
 
 module.exports = {
   // ------------------------------------------------------------------------
   // var
   // ------------------------------------------------------------------------
 
-  // https://www.haskell.org/onlinereport/lexemes.html
-  //
-  // varid: "small { small | large | digit | ' }" per the report,
-  // where small: ascSmall | uniSmall | _ (and uniSmall is a superset of ascSmall)
-  // Then, uniSmall is implemented as the unicode class "Ll": letter lowercase
-  _varid: _ => varid_pattern,
-  _immediate_varid: _ => token.immediate(varid_pattern),
-  label: _ => /#[_\p{Ll}](\w|')*/u,
-  variable: $ => $._varid,
+  _varid:              _ => varid_pattern,
+  _immediate_varid:    _ => token.immediate(varid_pattern),
+  variable:            $ => $._varid,
   _immediate_variable: $ => alias($._immediate_varid, $.variable),
-  qualified_variable: $ => qualified($, $.variable),
-  _qvarid: $ => choice($.qualified_variable, $.variable),
+  qualified_variable:  $ => qualified($, $.variable),
+  _qvarid:             $ => choice($.qualified_variable, $.variable),
 
   operator: $ => $._varsym,
   _minus: $ => alias('-', $.operator),
@@ -38,11 +32,8 @@ module.exports = {
   // con
   // ------------------------------------------------------------------------
 
-  // per the report,
-  //   conid: "large { small | large | digit | ' }"
-  // large (via uniLarge) is "any uppercase or titlecase unicode character"
-  // which are the unicode categories "Lu": letter uppercase, "Lt": letter titlecase
-  _conid: _ => /[\p{Lu}\p{Lt}](\w|')*#?/u,
+  // Same as the varid pattern except this one would have to start with a capital letter.
+  _conid: _ => /[\p{Lu}_][\p{L}0-9_']*/u,
   constructor: $ => $._conid,
   qualified_constructor: $ => qualified($, $.constructor),
   _qconid: $ => choice($.qualified_constructor, $.constructor),
@@ -108,8 +99,6 @@ module.exports = {
 
   type_literal: $ => choice(
     $._literal,
-    $.con_list,
-    $.con_tuple,
   ),
 
   _qtycon: $ => choice($._qtyconid, parens($._qtyconsym)),

@@ -53,6 +53,7 @@ module.exports = grammar({
     $.quasiquote_body,
     $._strict,
     $._lazy,
+    // TODO: Unboxed products and sums were removed from the JS grammar but not from the scanner yet.
     $._unboxed_close,
     '|',
     'in',
@@ -109,6 +110,15 @@ module.exports = grammar({
      */
     [$.row_type, $.type_name],
     [$.record_type_literal, $.type_name],
+
+    /**
+     * Wildcards in right operator/infix expression sections conflict
+     * with wildcards in patterns.
+     *
+     * (_ `add` one)
+     * (_ : xs)
+     */
+    [$.exp_section_right, $.pat_wildcard],
 
     /**
      * Record updates `f { x = x }` conflict with function application `f { x: x }`.
@@ -212,12 +222,6 @@ module.exports = grammar({
      * Implicit parameters have slightly weird restrictions.
      */
     [$._type_or_implicit, $._context_constraints],
-
-    /**
-     * `(# | | ...` can start both `pat` and `exp`.
-     */
-    [$._pat_unboxed_sum, $._exp_unboxed_sum],
-
 
     /**
      * General kind signatures cause `(a :: k)` to be ambiguous.

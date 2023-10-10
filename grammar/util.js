@@ -1,21 +1,14 @@
-const
-
-parens = (...rule) => seq('(', ...rule, ')')
-
-braces = (...rule) => seq('{', ...rule, '}')
-
-brackets = (...rule) => seq('[', ...rule, ']')
-
-ticked = (...rule) => seq('`', ...rule, '`')
-
 quote = '\''
 
-qualified = ($, id) => seq($._qualifying_module, id)
+parens    = (...rule) => seq('(', ...rule, ')')
+braces    = (...rule) => seq('{', ...rule, '}')
+brackets  = (...rule) => seq('[', ...rule, ']')
+ticked    = (...rule) => seq('`', ...rule, '`')
 
-sep = (sep, rule) => optional(seq(rule, repeat(seq(sep, rule))))
+qualified = ($, id)   => seq($._qualifying_module, id)
 
+sep  = (sep, rule) => optional(seq(rule, repeat(seq(sep, rule))))
 sep1 = (sep, rule) => seq(rule, repeat(seq(sep, rule)))
-
 sep2 = (sep, rule) => seq(rule, repeat1(seq(sep, rule)))
 
 /**
@@ -56,12 +49,20 @@ layouted_without_end = ($, rule) => choice(
   seq($._layout_start, optional(terminated($, rule))),
 )
 
+/* A `where` without following definitions is illegal in most of PureScript except for the module name,
+ * where it's allowed for the keyword to not be followed by anything.
+ */
 where = ($, rule) => seq(
+  $.where,
+  layouted($, rule)
+)
+
+where_optional = ($, rule) => seq(
   $.where,
   optional(layouted($, rule)),
 )
 
-varid_pattern = /[_\p{Ll}](\w|')*#?/u
+varid_pattern = /[\p{Ll}_][\p{L}0-9_']*/u
 
 module.exports = {
   parens,
@@ -76,5 +77,6 @@ module.exports = {
   terminated,
   layouted,
   where,
+  where_optional,
   varid_pattern,
 }
