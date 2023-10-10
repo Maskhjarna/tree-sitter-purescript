@@ -96,5 +96,11 @@ module.exports = {
       braces(sep($.comma, $._record_field_update))
     ),
 
+  record_accessor: $ =>
+    seq(
+      $.wildcard,
+      token.immediate('.'),
+      $._immediate_variable
+    ),
 }
 

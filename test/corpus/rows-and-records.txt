@@ -140,6 +140,40 @@ a = _ { a = _ }
       (wildcard))))
 
 ================================================================================
+record accessors
+================================================================================
+
+a = _.b <<< _.c
+
+f = _.done $ fold something
+
+--------------------------------------------------------------------------------
+
+(purescript
+  (function
+    (variable)
+    (exp_infix
+      (record_accessor
+        (wildcard)
+        (variable))
+      (operator)
+      (record_accessor
+        (wildcard)
+        (variable))))
+  (function
+    (variable)
+    (exp_infix
+      (record_accessor
+        (wildcard)
+        (variable))
+      (operator)
+      (exp_apply
+        (exp_name
+          (variable))
+        (exp_name
+          (variable))))))
+
+================================================================================
 record literal with 1 wildcard
 ================================================================================
 

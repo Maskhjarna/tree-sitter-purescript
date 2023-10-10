@@ -165,6 +165,7 @@ module.exports = {
     $.exp_th_quoted_name,
     $.record_literal,
     $.record_update,
+    $.record_accessor,
     $.exp_section_left,
     $.exp_section_right,
     alias($.literal, $.exp_literal),
