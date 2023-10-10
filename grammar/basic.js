@@ -1,6 +1,5 @@
 decimals1 = /[0-9][0-9_]*/
 exponent = /e[+-]?[0-9_]+/
-magic_hash = rule => token(rule)
 
 module.exports = {
   // ------------------------------------------------------------------------
@@ -8,7 +7,7 @@ module.exports = {
   // ------------------------------------------------------------------------
 
   // the `choice` here is necessary to avoid integers being parsed as floats
-  float: _ => magic_hash(
+  float: _ => token(
     seq(
       decimals1,
       choice(
@@ -18,14 +17,14 @@ module.exports = {
     ),
   ),
 
-  char: _ => magic_hash(
+  char: _ => token(
     choice(
       /'[^']'/,
       /'\\[^ ]*'/,
     ),
   ),
 
-  string: _ => magic_hash(
+  string: _ => token(
     seq(
       '"',
       repeat(choice(
@@ -37,7 +36,7 @@ module.exports = {
     ),
   ),
 
-  triple_quote_string: _ => magic_hash(
+  triple_quote_string: _ => token(
     seq(
       '"""',
       repeat(/[^"""]*/),
@@ -45,9 +44,8 @@ module.exports = {
     ),
   ),
 
-  _integer_literal: _ => magic_hash(decimals1),
-
-  _hex_literal: _ => magic_hash(/0[xX][0-9a-fA-F_]+/),
+  _integer_literal: _ => token(decimals1),
+  _hex_literal: _ => token(/0x[0-9a-fA-F_]+/),
 
   integer: $ => choice(
     $._integer_literal,

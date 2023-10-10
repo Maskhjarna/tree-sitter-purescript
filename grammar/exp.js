@@ -1,4 +1,4 @@
-const { parens, brackets, sep1, layouted, qualified } = require('./util.js')
+const { parens, brackets, sep1, layouted, qualified, ticked } = require('./util.js')
 
 module.exports = {
   // ------------------------------------------------------------------------
@@ -17,11 +17,19 @@ module.exports = {
 
   exp_section_left: $ => parens(
     $._exp_infix,
-    $._qop,
+    choice(
+      ticked($._exp_infix),
+      $._q_op
+    ),
+    $.wildcard
   ),
 
   exp_section_right: $ => parens(
-    $._qop_nominus,
+    $.wildcard,
+    choice(
+      ticked($._exp_infix),
+      $._q_op
+    ),
     $._exp_infix,
   ),
 
@@ -109,20 +117,6 @@ module.exports = {
   exp_name: $ => choice(
     $._qvar,
     $._qcon,
-    $.implicit_parid,
-  ),
-
-  /**
-    * Unlike module dot or projection dot, the projection selector dot can match in positions where any varsym can
-    * match: `(.name)` vs. `(.::+)`.
-    * Furthermore, it can have whitespace between the paren and the dot.
-    * Handling this with the dot logic in the scanner would require unreasonable complexity, and since record fields can
-    * only be varids, we simply hardcode that here.
-    */
-  exp_projection_selector: $ => parens(
-    '.',
-    field('field', $._immediate_variable),
-    repeat(seq($._immediate_dot, field('field', $._immediate_variable))),
   ),
 
   /**
@@ -157,7 +151,6 @@ module.exports = {
     $.record_update,
     $.exp_section_left,
     $.exp_section_right,
-    $.exp_projection_selector,
     alias($.literal, $.exp_literal),
   ),
 
@@ -218,12 +211,23 @@ module.exports = {
    * The default is left, even though the reference specifies it the other way around.
    * In any case, this seems to be more stable.
    */
-  exp_infix: $ => seq($._exp_infix, $._qop, $._lexp),
+  exp_infix: $ =>
+    seq(
+      $._exp_infix,
+      choice(
+        $._q_op,
+        ticked($._exp_infix)
+      ),
+      $._lexp
+    ),
 
-  _exp_infix: $ => choice(
+  /**
+   * Higher precedence because it conflicts with `exp_infix`
+   */
+  _exp_infix: $ => prec(1, choice(
     $.exp_infix,
     $._lexp,
-  ),
+  )),
 
   /**
    * `prec.right` because:
