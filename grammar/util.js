@@ -62,6 +62,8 @@ where_optional = ($, rule) => seq(
   optional(layouted($, rule)),
 )
 
+// TODO: Not exactly correct because it matches `_` too which isn't valid
+// It can be fixed with `choice( seq( '_', … ), … )`
 varid_pattern = /[\p{Ll}_][\p{L}0-9_']*/u
 
 module.exports = {

@@ -15,23 +15,32 @@ module.exports = {
     $._exp,
   ),
 
-  exp_section_left: $ => parens(
-    $._exp_infix,
+  /**
+   * Technically these sections are not complete because we don't support
+   * case- and do- blocks without parens, e.g.:
+   *   a `case b of c -> d` e
+   * The reason these don't work probably has to do with the scanner's
+   * layout tracking and there's little sense to trying to make them work.
+   * But all of the syntactic forms do work when put into parens:
+   *   a `(if b then c else d)` e
+   */
+  exp_section_left: $ => prec(1, parens(
+    $._lexp,
     choice(
-      ticked($._exp_infix),
+      ticked(choice($._qvarid, $._exp)),
       $._q_op
     ),
     $.wildcard
-  ),
+  )),
 
-  exp_section_right: $ => parens(
+  exp_section_right: $ => prec(1, parens(
     $.wildcard,
     choice(
-      ticked($._exp_infix),
+      ticked(choice($._qvarid, $._exp)),
       $._q_op
     ),
-    $._exp_infix,
-  ),
+    $._exp,
+  )),
 
   exp_th_quoted_name: $ => choice(
     seq(quote, choice($._qvar, $._qcon)),
@@ -47,7 +56,9 @@ module.exports = {
     $._exp,
   ),
 
-  exp_in: $ => seq('in', $._exp),
+  // Apparently there's some ambiguity with infix expressions.
+  // Either way we want the keywords to bind the tightest.
+  exp_in: $ => prec(3, seq('in', $._exp)),
 
   let: $ => seq('let', optional($.decls)),
 
@@ -210,24 +221,35 @@ module.exports = {
    * This is left-associative, although in reality this would depend on the fixity declaration for the operator.
    * The default is left, even though the reference specifies it the other way around.
    * In any case, this seems to be more stable.
+   *
+   * Also see `exp_section_left` comment.
    */
   exp_infix: $ =>
-    seq(
+    prec(1, seq(
       $._exp_infix,
-      choice(
-        $._q_op,
-        ticked($._exp_infix)
-      ),
+      $._q_op,
       $._lexp
-    ),
+    )),
+
+  /**
+   * Ticked infix expression should bind more tightly than any other value.
+   * They are left-associative according to the docs.
+   */
+  exp_infix_ticked: $ =>
+    prec.left(2, seq(
+      $._exp,
+      ticked(choice($._qvarid, $._exp)),
+      $._exp
+    )),
 
   /**
    * Higher precedence because it conflicts with `exp_infix`
    */
-  _exp_infix: $ => prec(1, choice(
+  _exp_infix: $ => choice(
     $.exp_infix,
+    $.exp_infix_ticked,
     $._lexp,
-  )),
+  ),
 
   /**
    * `prec.right` because:

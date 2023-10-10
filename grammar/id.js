@@ -76,6 +76,8 @@ module.exports = {
 
   tycon_arrow: $ => parens($._arrow),
 
+  // TODO: Should `True` and `False` be considered literals?
+  // Technically one could overwrite them, it's not baked in syntax
   type_literal: $ => choice(
     $.integer,
     $.string,

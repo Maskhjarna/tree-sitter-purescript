@@ -44,9 +44,9 @@ module.exports = {
 
   operator_declaration: $ => seq(
     choice('infixl', 'infixr', 'infix'),
-    alias($.integer, $.precedence),
+    field('precedence', $.integer),
     choice(
-      seq('type', $._tyconid, 'as', $.operator),
+      seq('type', $._qtyconid, 'as', $.operator),
       seq($._qvarid, 'as', $.operator)
     )
   ),
