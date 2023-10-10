@@ -100,13 +100,18 @@ module.exports = {
     repeat1($.gdpat),
   ),
 
-  alt: $ => seq(field('pat', $._pat), $._alt_variants),
+  alt: $ => seq(
+    sep1($.comma, field('pat', $._pat)),
+    $._alt_variants
+  ),
 
   alts: $ => layouted($, $.alt),
 
   exp_case: $ => seq(
     'case',
-    field('condition', choice($.wildcard, $._exp)),
+    field('condition',
+      sep1($.comma, choice($.wildcard, $._exp))
+      ),
     'of',
     $.alts
   ),
