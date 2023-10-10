@@ -109,9 +109,11 @@
 ((variable) @constant.builtin.boolean
  (#match? @constant.builtin.boolean "^(true|false)$"))
 
- (variable) @variable
+ ; consider infix functions as operators
+ ; the highlight will only be applied if infix expression consists of just one identifier
+ (exp_infix_ticked (variable) @operator)
 
- (exp_infix_ticked (variable) @operator)  ; consider infix functions as operators
+ (variable) @variable
 
  ("@" @namespace)  ; "as" pattern operator, e.g. x@Constructor
 
