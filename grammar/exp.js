@@ -1,4 +1,4 @@
-const { parens, brackets, sep1, layouted, qualified } = require('./util.js')
+const { parens, brackets, sep1, layouted, qualified, ticked } = require('./util.js')
 
 module.exports = {
   // ------------------------------------------------------------------------
@@ -7,14 +7,7 @@ module.exports = {
 
   exp_parens: $ => parens($._exp),
 
-  /**
-  * Unboxed sums must have at least one separating `|`, otherwise the expression would be a unary or nullary tuple.
-  */
-  _exp_unboxed_sum: $ => sep2('|', optional($._exp)),
-
-  exp_unboxed_sum: $ => seq($._unboxed_open, $._exp_unboxed_sum, $._unboxed_close),
-
-  exp_list: $ => brackets(sep1($.comma, $._exp)),
+  exp_array: $ => brackets(sep($.comma, $._exp)),
 
   bind_pattern: $ => seq(
     $._typed_pat,
@@ -22,42 +15,16 @@ module.exports = {
     $._exp,
   ),
 
-  /**
-    * An expression like `[1,2..20]`.
-    *
-    * The two dots are handled in the scanner to disambiguate module and projection dots:
-    *
-    * - `[A.b]`
-    * - `[a.b]`
-    *
-    * The reason for `choice($._arith_dotdot, '..')` is simply to avoid having to add another case to the scanner.
-    * The disambiguation is only performed when the first dot occurs immediately after the identifier, since succeeding
-    * whitespace is not allowed for module/projection dots.
-    * When the scanner encounters two dots with no further symbolic characters, it rejects the token, deferring to the
-    * grammar.
-    * We could instead check for the `_arith_dotdot` symbol, but we have to reject the token anyway for record
-    * wildcards, so we can just fall back to the grammar for this as well.
-    */
-  exp_arithmetic_sequence: $ => brackets(
-    field('from', $._exp),
-    optional(seq($.comma, field('step', $._exp))),
-    choice($._arith_dotdot, '..'),
-    optional(field('to', $._exp)),
-  ),
-
   exp_section_left: $ => parens(
-    $._exp_infix,
-    $._qop,
+    $.wildcard,
+    choice($._q_op, $.exp_ticked),
+    $._exp_infix
   ),
 
   exp_section_right: $ => parens(
-    $._qop_nominus,
     $._exp_infix,
-  ),
-
-  exp_th_quoted_name: $ => choice(
-    seq(quote, choice($._qvar, $._qcon)),
-    seq(quote + quote, $._atype),
+    choice($._q_op, $.exp_ticked),
+    $.wildcard
   ),
 
   exp_type_application: $ => seq('@', $._atype),
@@ -79,13 +46,13 @@ module.exports = {
 
   exp_let_in: $ => seq($.exp_let, $.exp_in),
 
-  exp_cond: $ => seq(
+  exp_if: $ => seq(
     'if',
-    field('if', $._exp),
+    field('if', choice($.wildcard, $._exp)),
     'then',
-    field('then', $._exp),
+    field('then', choice($.wildcard, $._exp)),
     'else',
-    field('else', $._exp),
+    field('else', choice($.wildcard, $._exp)),
   ),
 
   pattern_guard: $ => seq(
@@ -104,26 +71,27 @@ module.exports = {
 
   gdpat: $ => seq($.guards, $._arrow, $._exp),
 
-  exp_if_guard: $ => seq('if', repeat1($.gdpat)),
-
   _alt_variants: $ => choice(
     seq($._arrow, field('exp', $._exp)),
     repeat1($.gdpat),
   ),
 
-  alt: $ => seq(field('pat', $._pat), $._alt_variants),
+  alt: $ => seq(
+    sep1($.comma, field('pat', $._pat)),
+    $._alt_variants
+  ),
 
   alts: $ => layouted($, $.alt),
 
-  exp_case: $ => seq('case', field('condition', $._exp), 'of', optional($.alts)),
+  _exp_case_slots: $ => sep1($.comma,
+    field('condition', choice($.wildcard, $._exp))
+  ),
 
-  /**
-   * left associative because the alts are optional
-   */
-  exp_lambda_case: $ => seq(
-    '\\',
+  exp_case: $ => seq(
     'case',
-    optional($.alts),
+    $._exp_case_slots,
+    'of',
+    $.alts
   ),
 
   stmt: $ => choice(
@@ -143,8 +111,6 @@ module.exports = {
   exp_name: $ => choice(
     $._qvar,
     $._qcon,
-    $.implicit_parid,
-    $.label,
   ),
 
   /**
@@ -186,14 +152,11 @@ module.exports = {
   _aexp_projection: $ => choice(
     $.exp_name,
     $.exp_parens,
-    $.exp_list,
-    $.exp_th_quoted_name,
+    $.exp_array,
     $.record_literal,
     $.record_update,
-    $.exp_arithmetic_sequence,
     $.exp_section_left,
     $.exp_section_right,
-    $.exp_unboxed_sum,
     $.exp_projection_selector,
     alias($.literal, $.exp_literal),
   ),
@@ -211,7 +174,6 @@ module.exports = {
   _aexp: $ => choice(
     $._aexp_projection,
     $.exp_type_application,
-    $.exp_lambda_case,
     $.exp_do,
     $.exp_projection,
   ),
@@ -228,7 +190,7 @@ module.exports = {
     seq($._aexp, $._exp_apply),
     seq($._aexp, $.exp_lambda),
     seq($._aexp, $.exp_let_in),
-    seq($._aexp, $.exp_cond),
+    seq($._aexp, $.exp_if),
     seq($._aexp, $.exp_case),
   ),
 
@@ -243,20 +205,28 @@ module.exports = {
 
   _lexp: $ => choice(
     $.exp_let_in,
-    $.exp_cond,
-    $.exp_if_guard,
+    $.exp_if,
     $.exp_case,
     $.exp_negation,
     $._fexp,
     $.exp_lambda,
   ),
 
+  exp_ticked: $ => ticked($._exp_infix),
+
   /**
    * This is left-associative, although in reality this would depend on the fixity declaration for the operator.
    * The default is left, even though the reference specifies it the other way around.
    * In any case, this seems to be more stable.
    */
-  exp_infix: $ => seq($._exp_infix, $._qop, $._lexp),
+  exp_infix: $ => seq(
+    $._exp_infix,
+    choice(
+      $._q_op,
+      $.exp_ticked
+      ),
+    $._lexp
+  ),
 
   _exp_infix: $ => choice(
     $.exp_infix,

@@ -1,0 +1,74 @@
+================================================================================
+Data definition
+================================================================================
+
+data A = A | B | C
+
+--------------------------------------------------------------------------------
+
+(purescript
+  (data
+    name: (type)
+    (constructor)
+    (constructor)
+    (constructor)))
+
+================================================================================
+Data definition with parameters
+================================================================================
+
+data A a
+  = A a a
+  | B a
+  | C a a
+  | D
+
+--------------------------------------------------------------------------------
+
+(purescript
+  (kind
+    name: (type)
+    (type_variable))
+  (ERROR
+    (pat_apply
+      (pat_name
+        (constructor))
+      (pat_name
+        (variable))
+      (pat_name
+        (variable)))
+    (pat_name
+      (constructor))
+    (pat_name
+      (variable))
+    (ERROR)
+    (pat_name
+      (constructor))
+    (pat_name
+      (variable))
+    (pat_name
+      (variable))
+    (ERROR)
+    (module)))
+
+================================================================================
+Data definition with signature
+================================================================================
+
+data A :: forall k. k -> Type
+data A a = A
+
+--------------------------------------------------------------------------------
+
+(purescript
+  (ERROR
+    (kind
+      name: (type)
+      (ERROR)
+      (type_variable)
+      (ERROR)
+      (type_variable)))
+  (data
+    name: (type)
+    (type_variable)
+    (constructor)))

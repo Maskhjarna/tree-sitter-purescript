@@ -53,6 +53,7 @@ module.exports = grammar({
     $.quasiquote_body,
     $._strict,
     $._lazy,
+    // TODO: Unboxed types were removed from the JS grammar but not from the scanner yet.
     $._unboxed_close,
     '|',
     'in',
@@ -110,6 +111,8 @@ module.exports = grammar({
     [$.row_type, $.type_name],
     [$.record_type_literal, $.type_name],
 
+    [$._field_name, $.pat_field],
+
     /**
      * Record updates `f { x = x }` conflict with function application `f { x: x }`.
      * In PureScript record updates in fact do have higher precedence than function
@@ -125,6 +128,26 @@ module.exports = grammar({
      * Needs more investigation.
      */
     [$._type_infix, $.type_infix],
+
+    /**
+     * Same as above, but for expressions.
+     */
+    [$._exp_infix, $.exp_infix],
+
+    /*
+     * Wildcards in expression sections and pattern wildcards.
+     * They should be easily disambiguable but currently the grammar isn't capable of this.
+     */
+    [$.exp_section_left, $.pat_wildcard],
+
+    /**
+     * The definition of an infix expression is rather simple and as such
+     * it allows things which wouldn't be possible in reality:
+     *
+     * a ``b`` c
+     * (note the double '`' ticks)
+     */
+    [$.exp_ticked],
 
     /**
      * Optional context for a data/newtype decl with infix types:
@@ -178,17 +201,7 @@ module.exports = grammar({
     [$.exp_name, $.pat_name],
     [$._aexp_projection, $._apat],
     [$.exp_type_application, $.pat_type_binder],
-
-    /**
-     * Ambiguity between symbolic and regular constructors:
-     *
-     * data A = Maybe Int :+ Int
-     * data A = Name Int
-     *
-     * both start with two tycons.
-     */
-    [$.type_name, $.data_constructor],
-
+    [$.pat_name, $._q_op],
 
     /**
      * For getting a node for function application, and no extra node if the expression only consists of one term.
@@ -214,23 +227,11 @@ module.exports = grammar({
     [$._type_or_implicit, $._context_constraints],
 
     /**
-     * `(# | | ...` can start both `pat` and `exp`.
-     */
-    [$._pat_unboxed_sum, $._exp_unboxed_sum],
-
-
-    [$.exp_lambda_case],
-
-    /**
      * General kind signatures cause `(a :: k)` to be ambiguous.
      * This problem might be solvable if `type.js` were to be refactored.
      */
     [$.annotated_type_variable, $.type_name],
 
-    /**
-     * A multi-way `if` in a list conflicts with list comprehension: `[if | condition -> expr]`
-     */
-    [$.exp_if_guard],
   ],
 
   word: $ => $._varid,
