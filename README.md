@@ -31,4 +31,4 @@ If you notice something not working correctly or simply have a suggestion or req
 
 ## Acknowledgments
 - [tree-sitter-haskell](https://github.com/tree-sitter/tree-sitter-haskell) contributors for developing the original grammar
-- [Maskhjarna/tree-sitter-purescript](https://github.com/Maskhjarna/tree-sitter-purescript) for starting the fork and inspiring further work
+- [postsolar/tree-sitter-purescript](https://github.com/postsolar/tree-sitter-purescript) for driving development
