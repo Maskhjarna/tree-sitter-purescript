@@ -5,7 +5,7 @@ module.exports = {
   pat_field: $ =>
     seq(
       $._field_name,
-      optional(seq(':', $._nested_pat))
+      optional(seq(':', $._typed_pat))
     ),
 
   pat_fields: $ => braces(sep($.comma, $.pat_field)),
@@ -23,15 +23,9 @@ module.exports = {
 
   pat_wildcard: $ => alias($.wildcard, $.pat_wildcard),
 
-  pat_parens: $ => parens($._nested_pat),
+  pat_parens: $ => parens($._typed_pat),
 
-  pat_list: $ => brackets(sep1($.comma, $._nested_pat)),
-
-  pat_strict: $ => seq($._strict, $._apat),
-
-  pat_irrefutable: $ => seq($._lazy, $._apat),
-
-  pat_type_binder: $ => seq('@', $._atype),
+  pat_array: $ => brackets(sep($.comma, $._typed_pat)),
 
   _apat: $ => choice(
     $.pat_name,
@@ -41,10 +35,7 @@ module.exports = {
     alias($.literal, $.pat_literal),
     $.pat_wildcard,
     $.pat_parens,
-    $.pat_list,
-    $.pat_strict,
-    $.pat_irrefutable,
-    $.pat_type_binder,
+    $.pat_array,
   ),
 
   pat_negation: $ => seq('-', $._apat),
@@ -60,7 +51,7 @@ module.exports = {
     $.pat_apply,
   ),
 
-  pat_infix: $ => seq($._lpat, $._qconsym, $._pat),
+  pat_infix: $ => seq($._lpat, $._q_op, $._pat),
 
   /**
    * Without the precs, a conflict is needed.
@@ -77,13 +68,4 @@ module.exports = {
     $.pat_typed,
   ),
 
-  pat_view: $ => seq($._exp, $._arrow, $._nested_pat),
-
-  /**
-   * Patterns that occur inside parentheses, and thus can always have view patterns and type annotations.
-   */
-  _nested_pat: $ => choice(
-    $._typed_pat,
-    $.pat_view,
-  )
 }
